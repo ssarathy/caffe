@@ -194,6 +194,10 @@ bp::object Blob_Reshape(bp::tuple args, bp::dict kwargs) {
   return bp::object();
 }
 
+string Layer_arguments(const Layer<Dtype>& layer) {
+  return layer.layer_param().python_param().param_str();
+}
+
 bp::object BlobVec_add_blob(bp::tuple args, bp::dict kwargs) {
   if (bp::len(kwargs) > 0) {
     throw std::runtime_error("BlobVec.add_blob takes no kwargs");
@@ -279,6 +283,7 @@ BOOST_PYTHON_MODULE(_caffe) {
           bp::return_internal_reference<>()))
     .def("setup", &Layer<Dtype>::LayerSetUp)
     .def("reshape", &Layer<Dtype>::Reshape)
+    .add_property("arguments", &Layer_arguments)
     .add_property("type", bp::make_function(&Layer<Dtype>::type));
   bp::register_ptr_to_python<shared_ptr<Layer<Dtype> > >();
 

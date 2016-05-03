@@ -301,7 +301,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 140 (last added: batch_norm_param)
+// LayerParameter next available layer-specific ID: 145 (last added: nvtransform_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -386,6 +386,10 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+  // NVIDIA PARAMETERS:
+  optional NVGroundTruthParameter nvgroundtruth_param = 140;
+  optional NVAugmentationParameter nvaugmentation_param = 141;
+  optional L1LossParameter l1loss_param = 144;
 }
 
 // Message that stores parameters used to apply transformation
@@ -409,6 +413,96 @@ message TransformationParameter {
   optional bool force_color = 6 [default = false];
   // Force the decoded image to have 1 color channels.
   optional bool force_gray = 7 [default = false];
+}
+// Message that stores parameters used to create gridbox ground truth
+message NVGroundTruthParameter {
+  // stride of gridbox with respect to image size
+  optional uint32 stride = 1 [default = 4];
+  // coverage region scale with respect to bounding box size
+  optional float scale_cvg = 2 [default = 0.5];
+  enum GridboxType {
+    GRIDBOX_MAX = 0;
+    GRIDBOX_MIN = 1;
+  }
+  // determines coverage region's maximum and minimum dimensions
+  optional GridboxType gridbox_type = 3 [default = GRIDBOX_MAX];
+  // if gridbox_type is equal to GRIDBOX_MAX, the maximum size a given coverage
+  //  region may take.
+  optional uint32 max_cvg_len = 4 [default = 50];
+  // if gridbox_type is equal to GRIDBOX_MIN, the minimum size a given coverage
+  //  region may take.
+  optional uint32 min_cvg_len = 5 [default = 50];
+  enum CoverageType {
+    RECTANGULAR = 0;
+  }
+  // shape of the coverage geometry.
+  optional CoverageType coverage_type = 7 [default = RECTANGULAR];
+  // Size that incoming images are cropped / scaled to during training / test
+  //  time. The network will only see images of this size.
+  optional uint32 image_size_x = 8 [default = 1248];
+  optional uint32 image_size_y = 9 [default = 384];
+  // coverage proportional to the size of the gridbox region overlapping the
+  // normalize object coverage by the size of the object
+  optional bool obj_norm = 11 [default = false];
+  // crop incoming bboxes such that their bounds remain inside the gridbox.
+  optional bool crop_bboxes = 12 [default = true];
+  // Integer index of classes to be included
+  repeated uint32 object_classes = 13 [deprecated=true];
+  // Integer and target index of classes to be included:
+  message ClassMapping {
+    required uint32 src = 1;
+    required uint32 dst = 2;
+  }
+  repeated ClassMapping object_class = 14;
+  // exclude all bounding boxes with a truncation value above this:
+  optional float truncate_threshold = 15 [default = 1.0];
+  // exclude all bounding boxes with an occlusion value above this:
+  optional uint32 occlusion_threshold = 16 [default = 3];
+  // exclude all bounding boxes with a height below this value:
+  optional float height_threshold = 17 [default = -1];
+  // exclude all objects further away from the origin than this value:
+  optional float depth_threshold = 18 [default = 3.402823e+38];
+  // if visualize is true, output example augmented images to directory at
+  //  img_header.
+  optional bool visualize = 19 [default = false];
+  // if true, visualization coloration is the scaled object norm value rather
+  //  than inferred class value.
+  optional bool visualize_obj_norm = 20 [default = true];
+  optional string img_header = 21 [default = "."];
+}
+
+// Message that stores parameters used to apply image and label augmentations
+// specific to NVDataLayer's online augmentation module
+message NVAugmentationParameter {
+  // probability that a random crop of the training image will be taken at test
+  //  time. If image dimensions are less than input size and random cropping is
+  //  off, then the image will be scaled deterministically to the input size.
+  optional float crop_prob = 1 [default = 1.0];
+  // number of pixels to shift the image by. If cropping is enabled, this number
+  //  is added to the range of possible crop offset values.
+  optional uint32 shift_x = 2 [default = 0];
+  optional uint32 shift_y = 3 [default = 0];
+  // probability that the training image will be scaled at test time. 0 turns
+  //  scale augmentation off.
+  optional float scale_prob = 4 [default = 0.33];
+  // minimum and maximum scaling factor. 1.0 implies no scaling.
+  optional float scale_min = 5 [default = 0.7];
+  optional float scale_max = 6 [default = 1.0];
+  // probability that image will be flipped across the Y axis. 0 turns flip 
+  //  augmentation off.
+  optional float flip_prob = 7 [default = 0.33];
+  // maximum angle in degrees (in both directions) image may be rotated. 0 turns
+  //  rotation augmentation off.
+  optional float rotation_prob = 8 [default = 0.33];
+  optional float max_rotate_degree = 9 [default = 1.0];
+  // maximum rotation of hue in degrees (in both directions). 0 turns hue
+  //  augmentation off.
+  optional float hue_rotation_prob = 10 [default = 0.33];
+  optional float hue_rotation = 11 [default = 15];
+  // maximum desaturation parameter. 1.0 may convert RGB to luminance. 0 turns
+  //  desaturation augmentation off.
+  optional float desaturation_prob = 12 [default = 0.33];
+  optional float desaturation_max = 13 [default = 0.5];
 }
 
 // Message that stores parameters shared by loss layers
@@ -1130,6 +1224,11 @@ message V1LayerParameter {
   optional TransformationParameter transform_param = 36;
   optional LossParameter loss_param = 42;
   optional V0LayerParameter layer = 1;
+}
+
+
+message L1LossParameter {
+  optional bool debug_info = 1 [default = false];
 }
 
 // DEPRECATED: V0LayerParameter is the old way of specifying layer parameters
