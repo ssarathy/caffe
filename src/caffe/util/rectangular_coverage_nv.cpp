@@ -133,18 +133,6 @@ CoverageGenerator<Dtype>::pruneBboxes(
     // exclude bounding boxes which don't exist in the scene at all:
     if (cLabel.bbox.area() < FLT_EPSILON) { continue; }
     
-    // exclude bounding boxes with a height less than some number of pixels:
-    if (cLabel.bbox.height < param_.height_threshold()) { continue; }
-    
-    // exclude bounding boxes with too high a truncation value:
-    if (cLabel.truncated > param_.truncate_threshold()) { continue; }
-    
-    // exclude bounding boxes with too high an occlusion value:
-    if (cLabel.occlusion > param_.occlusion_threshold()) { continue; }
-    
-    // exclude bounding boxes too far away from the camera:
-    if (std::abs(cLabel.location.z) > param_.depth_threshold()) { continue; }
-    
     result.push_back(cLabel);
   }
   

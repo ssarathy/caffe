@@ -454,14 +454,6 @@ message NVGroundTruthParameter {
     required uint32 dst = 2;
   }
   repeated ClassMapping object_class = 14;
-  // exclude all bounding boxes with a truncation value above this:
-  optional float truncate_threshold = 15 [default = 1.0];
-  // exclude all bounding boxes with an occlusion value above this:
-  optional uint32 occlusion_threshold = 16 [default = 3];
-  // exclude all bounding boxes with a height below this value:
-  optional float height_threshold = 17 [default = -1];
-  // exclude all objects further away from the origin than this value:
-  optional float depth_threshold = 18 [default = 3.402823e+38];
   // if visualize is true, output example augmented images to directory at
   //  img_header.
   optional bool visualize = 19 [default = false];
